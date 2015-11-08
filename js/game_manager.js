@@ -10,7 +10,7 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
-  this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
+  this.inputManager.on("keepPlaying", this.keepplaying.bind(this));
 
   this.setup();
 }
@@ -23,7 +23,7 @@ GameManager.prototype.restart = function () {
 };
 
 // Keep playing after winning (allows going over 2048)
-GameManager.prototype.keepPlaying = function () {
+GameManager.prototype.keepplaying = function () {
   this.keepPlaying = true;
   this.actuator.continueGame(); // Clear the game won/lost message
 };
