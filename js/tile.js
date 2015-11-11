@@ -1,4 +1,5 @@
 function Tile(position, value) {
+  console.log(position);
   this.x                = position.x;
   this.y                = position.y;
   this.value            = value || 2;

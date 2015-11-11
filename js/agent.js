@@ -15,10 +15,21 @@ AgentBrain.prototype.reset = function () {
     this.grid = new Grid(this.previousState.size, this.previousState.cells);
 };
 
+AgentBrain.prototype.loadGrid = function(grid) {
+    this.grid = new Grid(this.previousState.size, grid);
+};
+
+AgentBrain.prototype.addTile = function(pos, value) {
+    //{ x: x, y: y }
+    console.log("add tile");
+    this.grid.insertTile(new Tile(pos, value));
+};
+
 // Adds a tile in a random position
 AgentBrain.prototype.addRandomTile = function () {
     if (this.grid.cellsAvailable()) {
         var value = Math.random() < 0.9 ? 2 : 4;
+        console.log("add random tile");
         var tile = new Tile(this.grid.randomAvailableCell(), value);
 
         this.grid.insertTile(tile);
@@ -80,7 +91,7 @@ AgentBrain.prototype.move = function (direction) {
             }
         });
     });
-    console.log(moved);
+    //console.log(moved);
     if (moved) {
         this.addRandomTile();
     }
@@ -141,19 +152,134 @@ function Agent() {
 
 Agent.prototype.selectMove = function (gameManager) {
     var brain = new AgentBrain(gameManager);
-
+    //brain.printGrid(brain.grid.cells);
     // Use the brain to simulate moves
     // brain.move(i) 
     // i = 0: up, 1: right, 2: down, 3: left
     // brain.reset() resets the brain to the current game board
-
-    if (brain.move(0)) return 0;
-    if (brain.move(3)) return 3;
-    if (brain.move(2)) return 2;
-    if (brain.move(1)) return 1;
+    
+    //expectimax = function(brain, depth, player)
+    var bestScore = 0; var score = 0; var bestMove;
+    for(var i=0; i<4; i++) {
+        if (brain.move(i))
+            score = this.expectimax(brain, 3, 2);
+        if(score > bestScore) {
+            bestScore = score; bestMove = i;
+        }
+        brain.reset();
+    }
+    return bestMove;
 };
 
-Agent.prototype.evaluateGrid = function (gameManager) {
-    // calculate a score for the current grid configuration
+Agent.prototype.printGrid = function(grid) {
+    var strBoard = "{";
+    for(var x=0; x < this.size; x++) {
+        strBoard += "[";
+        for(var y=0; y< this.size; y++) {
+            if(grid[x][y])
+            strBoard += grid[x][y].value + ", ";
+            else
+            strBoard += "0, ";
+        }
+        strBoard += "]";
+    }
+    strBoard += "}";
+    console.log(strBoard);
+};
 
+Agent.prototype.evaluateGrid = function (board) {
+    // calculate a score for the current grid configuration
+    //freetiles + (1-snake) + matching tiles + score
+    var score = 0, free = 0, matches = 0, snake = 0, highestVal = 0;
+    for(var x=0; x<board.size; x++) {
+        for(var y=0; y<board.size; y++) {
+            if(board[x][y]) {
+                //look for neighbor values
+                var tile = board[x][y];
+                var inc_snake = 0, dec_snake = 0, match = 0;
+                inc_snake = this.checkNeighbor(board, tile, tile.value*2);
+                if(tile.value > 2) { dec_snake = this.checkNeighbor(board, tile, tile.value/2); }
+                match = this.checkNeighbor(board, tile, tile.value);
+                
+                //calculate bonuses for friendly neighbors
+                if(inc_snake < 1 && dec_snake < 1) { snake -= tile.value; }
+                if(match > 0) { matches += tile.value; }
+                if(tile.value > highestVal) {highestVal = tile.value}
+                score += tile.value;
+            } else {
+                free +=1;
+            }
+        }
+    }
+    //calculate up total score and return
+    return (free * highestVal) + snake + matches;
+};
+
+Agent.prototype.checkNeighbor = function(board, tile, value) {
+    var x = tile.x;
+    var y = tile.y;
+    var matches = 0;
+    if(x-1 > -1 && board[x-1][y]) {
+    //left
+        if(board[x-1][y].value === value) {
+            matches++;
+        }
+    } else if(x+1 < 5 && board[x+1][y]) {
+    //right
+        if(board[x+1][y].value === value) {
+           matches++; 
+        }
+    } else if(y-1 > -1 && board[x][y-1]) {
+    //up
+        if(board[x][y-1].value === value) {
+            matches++;
+        }
+    } else if(y+1 < 5 && board[x][y+1]) {
+    //down
+        if(board[x][y+1].value === value) {
+            matches++;
+        }
+    }
+    return matches;
+};
+
+Agent.prototype.expectimax = function(brain, depth, player) {
+    if(depth === 0)
+        return this.evaluateGrid(brain.grid.cells);
+    else if(player === 1)
+        return this.maxScore(brain, depth-1);
+    else if(player === 2)
+        return this.expectScore(brain, depth-1);
+};
+
+Agent.prototype.maxScore = function(brain, depth) {
+    var score;
+    var oldGrid = brain.grid.cells;
+    //foreach move{0,1,2,3}
+    for(var i = 0; i < 4; i++) {
+        var moved = brain.move(i);
+        if(moved) {
+            score = Math.max(score, this.expectimax(brain, depth, 2));
+        }
+        brain.loadGrid(oldGrid);
+    }
+    return score;
+};
+
+Agent.prototype.expectScore = function(brain, depth) {
+    var oldGrid = brain.grid.cells;
+    var cells = brain.grid.availableCells();
+    var sum = 0;
+    for(var i=0; i < cells.length; i++) {
+        var p = (1/cells.length) * 0.9; //multiplied by tiles that can be occupied by 2 or 4
+        brain.addTile(cells[i], 2);
+        sum += p * this.expectimax(brain, depth, 1);
+        brain.loadGrid(oldGrid);
+
+        p = (1/cells.length) * 0.1;
+        this.addTile(cells[i], 4);
+        sum += p * this.expectimax(brain, depth, 1);
+        brain.loadGrid(oldGrid);
+    }
+    return sum;
 };
