@@ -14,8 +14,10 @@ AgentBrain.prototype.reset = function () {
     this.score = 0;
     this.grid = new Grid(this.previousState.size, this.previousState.cells);
 };
-//write function to add randomMove in fixed position
 
+AgentBrain.prototype.addTile = function(cell, val) {
+    this.grid.insertTile(new Tile({x:cell.x, y:cell.y}, val));
+}
 
 // Adds a tile in a random position
 AgentBrain.prototype.addRandomTile = function () {
@@ -151,16 +153,7 @@ Agent.prototype.selectMove = function (gameManager) {
     // brain.reset() resets the brain to the current game board
     
     //expectimax = function(brain, depth, player)
-    var bestScore = 0; var score = 0; var bestMove;
-    for(var i=0; i<4; i++) {
-        if (brain.move(i))
-            score = this.expectimax(brain, 1, 2);
-        if(score > bestScore) {
-            bestScore = score; bestMove = i;
-        }
-        brain.reset();
-    }
-    return bestMove;
+    return this.expectimax(brain, 2, 1).maxMove;
 };
 
 Agent.prototype.printGrid = function(grid) {
@@ -241,40 +234,45 @@ Agent.prototype.checkNeighbor = function(board, tile, value) {
 
 Agent.prototype.expectimax = function(brain, depth, player) {
     //if gameovr return evaluate
-    if(depth === 0) {
+    if(depth === 0) { //also end if game is over
         console.log("expectimax");
         this.printGrid(brain.grid.cells);
-        return this.evaluateGrid(brain.grid);}
-    else if(player === 1)
+        return {maxMove:0, maxScore:this.evaluateGrid(brain.grid)};
+    } else if(player === 1)
         return this.maxScore(brain, depth-1);
     else if(player === 2)
-        return this.expectScore(brain, depth-1);
+        return {maxMove:0, maxScore:this.expectScore(brain, depth-1)};
         //return {maxvalue, bestmove};
 };
 
 Agent.prototype.maxScore = function(brain, depth) {
-    var score;
-    var oldGrid = brain.grid.serialize();
+    var score = 0, move;
+    var oldBrain = new AgentBrain(brain);
     //foreach move{0,1,2,3}
     for(var i = 0; i < 4; i++) {
-        var moved = brain.move(i);
+        var moved = oldBrain.move(i);
         if(moved) {
-            score = Math.max(score, this.expectimax(brain, depth, 2));
+            var max = this.expectimax(oldBrain, depth, 2).maxScore;
+            if(max > score) {
+                score = max;
+                move = i;
+            }
         }
-        brain.loadGrid(oldGrid);
+        oldBrain.reset();
     }
-    return score;
+    return {maxMove:move, maxScore:score};
 };
 
 Agent.prototype.expectScore = function(brain, depth) {
-    var oldGrid = brain.grid.serialize();
+    var oldBrain = new AgentBrain(brain);
     var cells = brain.grid.availableCells();
     var sum = 0;
     for(var i=0; i < cells.length; i++) {
         var p = (1/cells.length) * 0.9; //multiplied by tiles that can be occupied by 2 or 4
-        brain.addTile(cells[i], 2);
-        sum += p * this.expectimax(brain, depth, 1);
-        //may switch out for mote carlo
+        oldBrain.addTile(cells[i], 2);
+        sum += p * this.expectimax(oldBrain, depth, 1).maxScore;
+        //may switch out for monte carlo
+        oldBrain.reset();
     }
     return sum;
 };
