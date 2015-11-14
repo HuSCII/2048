@@ -532,7 +532,7 @@ hr {
     box-sizing: border-box;
     line-height: 1.65; }
 
-  .restart-button {
+  .restart-button, .step-button {
     width: 42%;
     padding: 0;
     display: block;

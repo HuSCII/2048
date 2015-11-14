@@ -154,6 +154,9 @@ Agent.prototype.selectMove = function (gameManager) {
 };
 
 Agent.prototype.evaluateGrid = function (gameManager) {
+
+    console.log(gameManager.grid.cellOccupied());
+
     // calculate a score for the current grid configuration
 
 };
