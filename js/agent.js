@@ -43,10 +43,15 @@ AgentBrain.prototype.reset = function () {
     this.grid = new Grid(this.previousState.size, this.previousState.cells);
 };
 
+AgentBrain.prototype.addTile = function(cell, val) {
+    this.grid.insertTile(new Tile({x:cell.x, y:cell.y}, val));
+}
+
 // Adds a tile in a random position
 AgentBrain.prototype.addRandomTile = function () {
     if (this.grid.cellsAvailable()) {
         var value = Math.random() < 0.9 ? 2 : 4;
+        console.log("add random tile");
         var tile = new Tile(this.grid.randomAvailableCell(), value);
 
         this.grid.insertTile(tile);
@@ -108,9 +113,9 @@ AgentBrain.prototype.move = function (direction) {
             }
         });
     });
-    console.log(moved);
+    //console.log(moved);
     if (moved) {
-        this.addRandomTile();
+        //this.addRandomTile(); adds in random tile at end of turn
     }
     return moved;
 };
@@ -170,28 +175,12 @@ function Agent() {
 Agent.prototype.selectMove = function (gameManager) {
     var brain = new AgentBrain(gameManager);
 
-<<<<<<< Updated upstream
-=======
     //brain.printGrid(brain.grid.cells);
 
->>>>>>> Stashed changes
     // Use the brain to simulate moves
     // brain.move(i) 
     // i = 0: up, 1: right, 2: down, 3: left
     // brain.reset() resets the brain to the current game board
-<<<<<<< Updated upstream
-
-    if (brain.move(0)) return 0;
-    if (brain.move(3)) return 3;
-    if (brain.move(2)) return 2;
-    if (brain.move(1)) return 1;
-};
-
-Agent.prototype.evaluateGrid = function (gameManager) {
-    // calculate a score for the current grid configuration
-
-};
-=======
 
     // Use expectimax (or replace with alphabeta)
     var maxMove = this.expectimax(brain, 5, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, true).maxMove;
@@ -382,4 +371,3 @@ Agent.prototype.alphabeta = function(brain, depth, a, b, maximizingPlayer) {
         return {maxScore: v, maxMove:0};
     }
 };
->>>>>>> Stashed changes
